@@ -2,13 +2,103 @@
 using System.Collections.Generic;
 using System.Linq;
 
-runGame(3);
+Game.Run(3);
 
-void runGame(int diskCount)
+static class Game
 {
-    var (towers, moveCount) = setupState(diskCount);
+    public static bool CheckGameSolved(IEnumerable<int>[] towers, int diskCount) =>
+        !towers[0].Any() && !towers[1].Any() && towers[2].Count() == diskCount;
 
-    (IEnumerable<int>[], int) setupState(int diskCount)
+    public static void Run(int diskCount)
+    {
+        var (towers, moveCount) = State.Setup(diskCount);
+
+        while (true)
+        {
+            IO.OutputState(towers);
+
+            var input = IO.OnInput();
+
+            int from, to;
+
+            try
+            {
+                (from, to) = Move.ValidateInput(input);
+            }
+            catch
+            {
+                IO.OutputInputError();
+                continue;
+            }
+
+            if (Move.ValidateIndexes(from, to))
+            {
+                IO.OutputIndexError();
+                continue;
+            }
+
+            if (Move.ValidateFromTowerFilled(towers, from))
+            {
+                IO.OutputTowerError();
+                continue;
+            }
+
+            if (Move.ValidateMove(towers, from, to))
+            {
+                IO.OutputMoveError();
+                continue;
+            }
+
+            (towers, moveCount) = Move.ApplyMove(towers, from, to, moveCount);
+
+            if (Game.CheckGameSolved(towers, diskCount))
+            {
+                IO.OutputGameSolved(moveCount);
+                break;
+            }
+        }
+    }
+}
+
+static class IO
+{
+    public static string OnInput()
+    {
+        var input = Console.ReadLine()!;
+        Console.WriteLine("------");
+        return input;
+    }
+
+    public static void OutputInputError() =>
+        Console.WriteLine("Describe your next move with a '<from> <to>' notation, where <from> and <to> are the zero-based index of the towers.");
+
+    public static void OutputIndexError() =>
+        Console.WriteLine("Indexes must be between 0 and 2.");
+
+    public static void OutputTowerError() =>
+        Console.WriteLine("You cannot move a disk from an empty tower.");
+
+    public static void OutputMoveError() =>
+        Console.WriteLine("You cannot move a disk on a smaller disk.");
+
+    public static void OutputGameSolved(int moveCount) =>
+        Console.WriteLine("You won the game in {0} moves!", moveCount);
+
+    public static void OutputState(IEnumerable<int>[] towers)
+    {
+        for (int i = 0; i < towers.Count(); i++)
+        {
+            var tower = towers[i];
+            Console.WriteLine(i + " | " + string.Join(' ', tower));
+        }
+
+        Console.WriteLine("------");
+    }
+}
+
+static class State
+{
+    public static (IEnumerable<int>[], int) Setup(int diskCount)
     {
         var towers = new IEnumerable<int>[]
         {
@@ -21,112 +111,34 @@ void runGame(int diskCount)
 
         return (towers, moveCount);
     }
+}
 
-    while (true)
+static class Move
+{
+    public static (int from, int to) ValidateInput(string input)
     {
-        outputState(towers);
+        var indexes = input.Split(" ");
+        var from = int.Parse(indexes[0]);
+        var to = int.Parse(indexes[1]);
 
-        var input = onInput();
-
-        int from, to;
-
-        try
-        {
-            (from, to) = validateInput(input);
-        }
-        catch
-        {
-            outputInputError();
-            continue;
-        }
-
-        if (validateIndexes(from, to))
-        {
-            outputIndexError();
-            continue;
-        }
-
-        if (validateFromTowerFilled(towers, from))
-        {
-            outputTowerError();
-            continue;
-        }
-
-        if (validateMove(towers, from, to))
-        {
-            outputMoveError();
-            continue;
-        }
-
-        (towers, moveCount) = applyMove(towers, from, to, moveCount);
-
-        if (checkGameSolved(towers, diskCount))
-        {
-            outputGameSolved(moveCount);
-            break;
-        }
-
-        string onInput()
-        {
-            var input = Console.ReadLine()!;
-            Console.WriteLine("------");
-            return input;
-        }
-
-        (int from, int to) validateInput(string input)
-        {
-            var indexes = input.Split(" ");
-            from = int.Parse(indexes[0]);
-            to = int.Parse(indexes[1]);
-
-            return (from, to);
-        }
-
-        void outputInputError() =>
-            Console.WriteLine("Describe your next move with a '<from> <to>' notation, where <from> and <to> are the zero-based index of the towers.");
-
-        bool validateIndexes(int from, int to) =>
-            (from, to) is ( < 0 or > 2, _) or (_, < 0 or > 2);
-
-        void outputIndexError() =>
-            Console.WriteLine("Indexes must be between 0 and 2.");
-
-        bool validateFromTowerFilled(IEnumerable<int>[] towers, int from) =>
-            !towers[from].Any();
-
-        void outputTowerError() =>
-            Console.WriteLine("You cannot move a disk from an empty tower.");
-
-        bool validateMove(IEnumerable<int>[] towers, int from, int to) =>
-            towers[to].Any() && towers[to].Last() > towers[from].Last();
-
-        void outputMoveError() =>
-            Console.WriteLine("You cannot move a disk on a smaller disk.");
-
-        (IEnumerable<int>[], int) applyMove(IEnumerable<int>[] towers, int from, int to, int moveCount)
-        {
-            towers[to] = towers[to].Append(towers[from].Last());
-            towers[from] = towers[from].SkipLast(1);
-            moveCount++;
-
-            return (towers, moveCount);
-        }
-
-        bool checkGameSolved(IEnumerable<int>[] towers, int diskCount) =>
-            !towers[0].Any() && !towers[1].Any() && towers[2].Count() == diskCount;
-
-        void outputGameSolved(int moveCount) =>
-            Console.WriteLine("You won the game in {0} moves!", moveCount);
+        return (from, to);
     }
 
-    void outputState(IEnumerable<int>[] towers)
-    {
-        for (int i = 0; i < towers.Count(); i++)
-        {
-            var tower = towers[i];
-            Console.WriteLine(i + " | " + string.Join(' ', tower));
-        }
+    public static bool ValidateIndexes(int from, int to) =>
+        (from, to) is ( < 0 or > 2, _) or (_, < 0 or > 2);
 
-        Console.WriteLine("------");
+    public static bool ValidateFromTowerFilled(IEnumerable<int>[] towers, int from) =>
+        !towers[from].Any();
+
+    public static bool ValidateMove(IEnumerable<int>[] towers, int from, int to) =>
+        towers[to].Any() && towers[to].Last() > towers[from].Last();
+
+    public static (IEnumerable<int>[], int) ApplyMove(IEnumerable<int>[] towers, int from, int to, int moveCount)
+    {
+        towers[to] = towers[to].Append(towers[from].Last());
+        towers[from] = towers[from].SkipLast(1);
+        moveCount++;
+
+        return (towers, moveCount);
     }
 }
