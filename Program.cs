@@ -11,7 +11,8 @@ static class Game
 
     public static void Run(int diskCount)
     {
-        var (towers, moveCount) = State.Setup(diskCount);
+        var moveCount = 0;
+        var towers = Towers.Setup(diskCount);
 
         while (true)
         {
@@ -49,7 +50,8 @@ static class Game
                 continue;
             }
 
-            (towers, moveCount) = Move.ApplyMove(towers, from, to, moveCount);
+            towers = Towers.ApplyMove(towers, from, to);
+            moveCount++;
 
             if (Game.CheckGameSolved(towers, diskCount))
             {
@@ -96,20 +98,22 @@ static class IO
     }
 }
 
-static class State
+static class Towers
 {
-    public static (IEnumerable<int>[], int) Setup(int diskCount)
-    {
-        var towers = new IEnumerable<int>[]
+    public static IEnumerable<int>[] Setup(int diskCount) =>
+        new IEnumerable<int>[]
         {
             Enumerable.Range(1, diskCount),
             Enumerable.Empty<int>(),
             Enumerable.Empty<int>()
         };
 
-        var moveCount = 0;
+    public static IEnumerable<int>[] ApplyMove(IEnumerable<int>[] towers, int from, int to)
+    {
+        towers[to] = towers[to].Append(towers[from].Last());
+        towers[from] = towers[from].SkipLast(1);
 
-        return (towers, moveCount);
+        return towers;
     }
 }
 
@@ -132,13 +136,4 @@ static class Move
 
     public static bool ValidateMove(IEnumerable<int>[] towers, int from, int to) =>
         towers[to].Any() && towers[to].Last() > towers[from].Last();
-
-    public static (IEnumerable<int>[], int) ApplyMove(IEnumerable<int>[] towers, int from, int to, int moveCount)
-    {
-        towers[to] = towers[to].Append(towers[from].Last());
-        towers[from] = towers[from].SkipLast(1);
-        moveCount++;
-
-        return (towers, moveCount);
-    }
 }
