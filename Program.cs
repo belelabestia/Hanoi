@@ -2,69 +2,83 @@
 using System.Collections.Generic;
 using System.Linq;
 
-Game.Run(3);
+new Game(3).Run();
 
-static class Game
+class Game
 {
-    public static bool CheckGameSolved(IEnumerable<int>[] towers, int diskCount) =>
-        !towers[0].Any() && !towers[1].Any() && towers[2].Count() == diskCount;
+    private int diskCount;
+    private Tower[] towers;
+    private int moveCount;
 
-    public static void Run(int diskCount)
+    public Game(int diskCount)
     {
-        var moveCount = 0;
-        var towers = Towers.Setup(diskCount);
+        this.diskCount = diskCount;
+        this.moveCount = 0;
+        towers = InitTowers(diskCount);
+    }
 
+    public bool GameSolved =>
+        towers[0].IsEmpty &&
+        towers[1].IsEmpty &&
+        towers[2].Height == diskCount;
+
+    public void Run()
+    {
         while (true)
         {
             IO.OutputState(towers);
 
-            var input = IO.OnInput();
+            var input = IO.AwaitInput();
 
-            int from, to;
+            try { HandleInput(input); }
+            catch { continue; }
 
-            try
-            {
-                (from, to) = Move.ValidateInput(input);
-            }
-            catch
-            {
-                IO.OutputInputError();
-                continue;
-            }
-
-            if (Move.ValidateIndexes(from, to))
-            {
-                IO.OutputIndexError();
-                continue;
-            }
-
-            if (Move.ValidateFromTowerFilled(towers, from))
-            {
-                IO.OutputTowerError();
-                continue;
-            }
-
-            if (Move.ValidateMove(towers, from, to))
-            {
-                IO.OutputMoveError();
-                continue;
-            }
-
-            towers = Towers.ApplyMove(towers, from, to);
-            moveCount++;
-
-            if (Game.CheckGameSolved(towers, diskCount))
+            if (GameSolved)
             {
                 IO.OutputGameSolved(moveCount);
                 break;
             }
         }
     }
+
+    private void HandleInput(string input)
+    {
+        try
+        {
+            var move = IO.ReadMove(input);
+            towers = ApplyMove(move);
+            moveCount++;
+        }
+        catch (InputMoveException) { IO.OutputInputError(); throw; }
+        catch (IndexException) { IO.OutputIndexError(); throw; }
+        catch (EmptyTowerException) { IO.OutputTowerError(); throw; }
+        catch (InvalidMoveException) { IO.OutputMoveError(); throw; }
+    }
+
+    private Tower[] ApplyMove(Move move)
+    {
+        towers[move.To.Value] = towers[move.To.Value].Put(towers[move.From.Value].Top);
+        towers[move.From.Value] = towers[move.From.Value].Take();
+
+        return towers;
+    }
+
+    private Tower[] InitTowers(int diskCount) =>
+        new IEnumerable<Disk>[]
+        {
+            Enumerable.Range(1, diskCount)
+                .Select(Disk.FromSize)
+                .Reverse(),
+            Enumerable.Empty<Disk>(),
+            Enumerable.Empty<Disk>()
+        }
+            .Select(Tower.FromDisks)
+            .ToArray();
 }
 
 static class IO
 {
-    public static string OnInput()
+    public static string AwaitInput()
     {
         var input = Console.ReadLine()!;
         Console.WriteLine("------");
@@ -86,54 +100,102 @@ static class IO
     public static void OutputGameSolved(int moveCount) =>
         Console.WriteLine("You won the game in {0} moves!", moveCount);
 
-    public static void OutputState(IEnumerable<int>[] towers)
+    public static void OutputState(Tower[] towers)
     {
         for (int i = 0; i < towers.Count(); i++)
         {
             var tower = towers[i];
-            Console.WriteLine(i + " | " + string.Join(' ', tower));
+            Console.WriteLine(i + " | " + string.Join(' ', tower.Disks.Select(disk => disk.Size.ToString())));
         }
 
         Console.WriteLine("------");
     }
-}
 
-static class Towers
-{
-    public static IEnumerable<int>[] Setup(int diskCount) =>
-        new IEnumerable<int>[]
+    public static Move ReadMove(string input)
+    {
+        try
         {
-            Enumerable.Range(1, diskCount),
-            Enumerable.Empty<int>(),
-            Enumerable.Empty<int>()
-        };
+            var indexes = input
+                .Split(" ")
+                .Select(int.Parse)
+                .Select(Index.FromInt)
+                .ToArray();
 
-    public static IEnumerable<int>[] ApplyMove(IEnumerable<int>[] towers, int from, int to)
-    {
-        towers[to] = towers[to].Append(towers[from].Last());
-        towers[from] = towers[from].SkipLast(1);
-
-        return towers;
+            return new Move(indexes[0], indexes[1]);
+        }
+        catch
+        {
+            throw new InputMoveException();
+        }
     }
 }
 
-static class Move
+record Tower(IEnumerable<Disk> Disks)
 {
-    public static (int from, int to) ValidateInput(string input)
-    {
-        var indexes = input.Split(" ");
-        var from = int.Parse(indexes[0]);
-        var to = int.Parse(indexes[1]);
+    public static Tower FromDisks(IEnumerable<Disk> disks) =>
+        new Tower(disks);
 
-        return (from, to);
-    }
+    public Tower Put(Disk disk) =>
+        CanAccept(disk) ?
+            new Tower(Disks.Append(disk)) :
+            throw new InvalidMoveException();
 
-    public static bool ValidateIndexes(int from, int to) =>
-        (from, to) is ( < 0 or > 2, _) or (_, < 0 or > 2);
+    public Disk Top =>
+        IsEmpty ?
+            throw new EmptyTowerException() :
+            Disks.Last();
 
-    public static bool ValidateFromTowerFilled(IEnumerable<int>[] towers, int from) =>
-        !towers[from].Any();
+    public Tower Take() =>
+        IsEmpty ?
+            throw new EmptyTowerException() :
+            new Tower(Disks.SkipLast(1));
 
-    public static bool ValidateMove(IEnumerable<int>[] towers, int from, int to) =>
-        towers[to].Any() && towers[to].Last() > towers[from].Last();
+    public bool IsEmpty =>
+        !Disks.Any();
+
+    public int Height =>
+        Disks.Count();
+
+    private bool CanAccept(Disk disk) =>
+        IsEmpty ||
+        disk.CanBePlacedOn(Top);
+}
+
+record Move(Index From, Index To);
+
+record Index(int Value)
+{
+    public static Index FromInt(int value) =>
+        value is < 0 or > 2 ?
+            throw new IndexException() :
+            new Index(value);
+}
+
+record Disk(int Size)
+{
+    public static Disk FromSize(int size) =>
+        new Disk(size);
+
+    public bool CanBePlacedOn(Disk disk) =>
+        Size < disk.Size;
+}
+
+class IndexException : ArgumentOutOfRangeException
+{
+    public IndexException() : base("Index must be between 0 and 2.") { }
+}
+
+class InputMoveException : ArgumentException
+{
+    public InputMoveException() : base("Invalid user move input.") { }
+}
+
+class EmptyTowerException : InvalidOperationException
+{
+    public EmptyTowerException() : base("Cannot take disk from empty tower.") { }
+}
+
+class InvalidMoveException : InvalidOperationException
+{
+    public InvalidMoveException() : base("Cannot put a disk on a smaller disk.") { }
 }
