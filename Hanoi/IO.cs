@@ -53,7 +53,7 @@ static class IO
         catch { throw new InputException(); }
     }
 
-    private static void OutputState(IEnumerable<Tower> towers)
+    public static void OutputState(IEnumerable<Tower> towers)
     {
         for (int i = 0; i < towers.Count(); i++)
         {
