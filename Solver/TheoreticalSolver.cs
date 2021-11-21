@@ -9,14 +9,11 @@ static class TheoreticalSolver
     {
         foreach (var move in NthSeries(game.DiskCount))
         {
-            // IO.OutputState(game.Towers);
-            // Solver.OutputMove(move);
             game.ApplyMove(move);
         }
 
         if (game.GameSolved)
         {
-            // IO.OutputState(game.Towers);
             Solver.OutputSolved(game.MoveCount);
             return;
         }

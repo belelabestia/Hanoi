@@ -19,8 +19,6 @@ static class PracticalSolver
 
         while (!game.GameSolved)
         {
-            // IO.OutputState(game.Towers);
-
             foreach (var move in cycle)
             {
                 try { game.ApplyMove(move); }
@@ -28,7 +26,6 @@ static class PracticalSolver
 
                 if (game.GameSolved)
                 {
-                    // IO.OutputState(game.Towers);
                     Solver.OutputSolved(game.MoveCount);
                     break;
                 }
