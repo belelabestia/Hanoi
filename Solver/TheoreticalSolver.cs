@@ -7,14 +7,16 @@ static class TheoreticalSolver
 
     public static void Run(Game game)
     {
-        foreach (var move in NthSeries(game.DiskCount))
+        var solution = NthSeries(game.DiskCount);
+
+        foreach (var move in solution)
         {
             game.ApplyMove(move);
         }
 
         if (game.GameSolved)
         {
-            Solver.OutputSolved(game.MoveCount);
+            Solver.OutputSolved(game.MoveCount, solution);
             return;
         }
 

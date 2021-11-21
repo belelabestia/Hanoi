@@ -16,17 +16,28 @@ static class PracticalSolver
     public static void Run(Game game)
     {
         var cycle = Cycle(game.DiskCount);
+        var moves = new List<Move>();
 
         while (!game.GameSolved)
         {
             foreach (var move in cycle)
             {
-                try { game.ApplyMove(move); }
-                catch { game.ApplyMove(move.Inverse()); }
+                try
+                {
+                    game.ApplyMove(move);
+                    moves.Add(move);
+                }
+                catch
+                {
+                    var inverse = move.Inverse();
+
+                    game.ApplyMove(inverse);
+                    moves.Add(inverse);
+                }
 
                 if (game.GameSolved)
                 {
-                    Solver.OutputSolved(game.MoveCount);
+                    Solver.OutputSolved(game.MoveCount, moves);
                     break;
                 }
             }
