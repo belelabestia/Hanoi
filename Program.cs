@@ -1,23 +1,16 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 
-var count = 13;
+int count;
 
-var task1 = PrintElapsedTime("Theoretical", () => TheoreticalSolver.Run(new Game(count)));
-var task2 = PrintElapsedTime("Practical", () => PracticalSolver.Run(new Game(count)));
+try { count = int.Parse(args[0]); }
+catch
+{
+    Console.WriteLine("Please provide a disk count parameter.");
+    return;
+}
 
-await Task.WhenAll(task1, task2);
+var theoreticalTask = Profiler.Run("Theoretical", () => TheoreticalSolver.Run(new Game(count)));
+var practicalTask = Profiler.Run("Practical", () => PracticalSolver.Run(new Game(count)));
 
-// IO.Run(new Game(3));
-
-Task PrintElapsedTime(string label, Action run) =>
-    Task.Run(() =>
-    {
-        var t = new Stopwatch();
-        Console.WriteLine("Starting activity {0}.", label);
-        t.Start();
-        run();
-        t.Stop();
-        Console.WriteLine("Activity {0} finished in {1}ms.", label, t.ElapsedMilliseconds);
-    });
+Task.WhenAll(theoreticalTask, practicalTask).Wait();
