@@ -23,8 +23,8 @@ class Game
     public void ApplyMove(Move move)
     {
         Towers = Towers
-            .SetItem(move.To.Value, Towers[move.To.Value].Put(Towers[move.From.Value].Top))
-            .SetItem(move.From.Value, Towers[move.From.Value].Take());
+            .SetItem(move.To, Towers[move.To].Put(Towers[move.From].Top))
+            .SetItem(move.From, Towers[move.From].Take());
 
         MoveCount++;
     }

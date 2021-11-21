@@ -6,6 +6,9 @@ record Index(int Value)
         value is < 0 or > 2 ?
             throw new IndexException() :
             new Index(value);
+
+    public static implicit operator int(Index index) =>
+        index.Value;
 }
 
 class IndexException : ArgumentOutOfRangeException
