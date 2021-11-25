@@ -42,7 +42,7 @@ static class IO
             return new Move(indexes[0], indexes[1]);
         }
         catch (IndexException) { throw; }
-        catch { throw new InputException(); }
+        catch (Exception e) { throw new InputException(e); }
     }
 
     public static void OutputState(IEnumerable<Tower> towers)
@@ -74,5 +74,5 @@ static class IO
 
 class InputException : ArgumentException
 {
-    public InputException() : base("Invalid user move input.") { }
+    public InputException(Exception e) : base("Invalid user move input.", e) { }
 }
