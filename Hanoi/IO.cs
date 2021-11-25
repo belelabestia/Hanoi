@@ -6,28 +6,20 @@ static class IO
 {
     public static void Run(Game game)
     {
-        while (true)
-        {
-            OutputState(game.Towers);
-
-            var input = AwaitInput();
-
+        while (!game.GameSolved)
             try
             {
+                OutputState(game.Towers);
+
+                var input = AwaitInput();
                 var move = ReadMove(input);
+
                 game.ApplyMove(move);
             }
-            catch (IndexException) { OutputIndexError(); continue; }
-            catch (InputException) { OutputInputError(); continue; }
-            catch (EmptyTowerException) { OutputEmptyTowerError(); continue; }
-            catch (InvalidTowerException) { OutputInvalidTowerError(); continue; }
-
-            if (game.GameSolved)
-            {
-                OutputGameSolved(game.MoveCount);
-                break;
-            }
-        }
+            catch (IndexException) { OutputIndexError(); }
+            catch (InputException) { OutputInputError(); }
+            catch (EmptyTowerException) { OutputEmptyTowerError(); }
+            catch (InvalidTowerException) { OutputInvalidTowerError(); }
     }
 
     private static string AwaitInput()
