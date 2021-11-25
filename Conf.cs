@@ -1,9 +1,9 @@
 using System;
 
-record Params(Mode Mode, int Count)
+record Conf(Mode Mode, int Count)
 {
-    public static Params FromArgs(string[] args) =>
-        new Params(
+    public static Conf FromArgs(string[] args) =>
+        new Conf(
             Mode: args[0].ToLower() switch
             {
                 "play" => Mode.Play,
