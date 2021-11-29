@@ -29,10 +29,10 @@ static class PracticalSolver
                 }
                 catch
                 {
-                    var inverse = move.Inverse();
+                    var reverse = move.Reverse();
 
-                    game.ApplyMove(inverse);
-                    moves.Add(inverse);
+                    game.ApplyMove(reverse);
+                    moves.Add(reverse);
                 }
 
                 if (game.GameSolved)

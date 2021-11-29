@@ -5,8 +5,8 @@ static class MoveExtensions
 
     public static Move Symmetrical(this Move move) =>
         new Move(move.From.Symmetrical(), move.To.Symmetrical())
-            .Inverse();
+            .Reverse();
 
-    public static Move Inverse(this Move move) =>
+    public static Move Reverse(this Move move) =>
         new Move(move.To, move.From);
 }
