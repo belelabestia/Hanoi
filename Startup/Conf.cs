@@ -24,5 +24,5 @@ enum Mode { Play, Solve }
 
 class ConfException : ArgumentException
 {
-    public ConfException(Exception e) : base($"Invalid hanoi parameters: {e.Message}", e) { }
+    public ConfException(Exception e) : base($"Invalid hanoi parameters.", e) { }
 }
