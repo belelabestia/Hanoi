@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-static class Solver
+static class SolverIO
 {
     private static bool printing = false;
 

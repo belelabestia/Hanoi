@@ -16,11 +16,11 @@ static class TheoreticalSolver
 
         if (game.GameSolved)
         {
-            Solver.OutputSolved(game.MoveCount, solution);
+            SolverIO.OutputSolved(game.MoveCount, solution);
             return;
         }
 
-        Solver.OutputFailed();
+        SolverIO.OutputFailed();
     }
 
     private static IEnumerable<Move> NthSeries(int diskCount)

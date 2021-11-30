@@ -37,7 +37,7 @@ static class PracticalSolver
 
                 if (game.GameSolved)
                 {
-                    Solver.OutputSolved(game.MoveCount, moves);
+                    SolverIO.OutputSolved(game.MoveCount, moves);
                     break;
                 }
             }
