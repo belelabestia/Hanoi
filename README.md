@@ -188,8 +188,101 @@ Semplicissimo, no? Eppure, con mio sommo stupore, nonostante la sua semplicità 
 
 ## Come l'ho implementato?
 
-Da fare.
+### Architettura e design
+
+Il progetto è nato come un piccolo script, poi rivisto e organizzato man mano, in pieno stile _agile_. Vista la natura tutto sommato monolitica del progetto, non mi sono disturbato a creare dei _namespace_. Non avendo bisogno di astrarre le implementazioni, mi sono limitato a organizzare i _dati_ in dei _record_ e i _moduli di funzioni_ in _classi statiche_.
+
+> Quindi niente dependency injection, niente interfacce, niente istanze che girano. I puristi OOP mi perdonino. O si fottano.
+
+Tutti i dati rappresentati come _record_ rispettano invece un design OOP abbastanza classico, definendo come propri metodi le operazioni elementari che si possono applicare su di essi. Non faccio tuttavia uso dell'incapsulamento: ove possibile ho preferito avere un'estensibilità totale, esponendo per intero lo stato di _dischi_, _indici_, _torri_ e _mosse_; la protezione dello stato è insita nell'immutabilità con cui tutti gli operatori agiscono, restituendo nuove istanze.
+
+Unica eccezione la classe `Game` che rappresenta _una_ partita e si comporta da _state holder_; se ne possono istanziare diverse parametrizzando il numero di dischi. `Game` si limita ad applicare le _mosse_ **mutando il proprio stato**.
+
+Laddove alcuni _gruppi di funzioni_ operano esclusivamente su uno specifico tipo di dato, ho rappresentato queste funzioni come _metodi di estensione_, per pura praticità sintattica.
+
+In pratica in questa _architettura_ abbiamo:
+
+- dei _dati_, rappresentati come _record_;
+- (eventualmente) delle _operazioni di base_ sui dati, implementate come _metodi_ sui rispettivi _record_;
+- dei _moduli di funzioni_ rappresentati come _classi statiche_;
+- (eventualmente) dei _metodi di estensione_, laddove si vanno a definire nuove operazioni su uno specifico _tipo di dato_.
+
+Le operazioni non valide vengono gestite con eccezioni definite ad hoc; tutte le eccezioni definite vengono intercettate al livello di competenza più opportuno per gestirle. Le eccezioni non definite e dunque non previste, non vengono intercettate a nessun livello e dunque lasceranno scoppiare l'applicazione.
+
+### Struttura del progetto
+
+Il file `Program.cs` contiene il minimo indispensabile per:
+
+- leggere i parametri da riga di comando intercettando eventuali eccezioni;
+- avviare l'applicazione.
+
+---
+
+La cartella `Startup` contiene:
+
+- il _modello_ di configurazione con tanto di _factory_ statica che lo genera a partire dagli `args`;
+- la funzione `Startup.RunHanoi` avvia la modalità richiesta (`play` o `solve`) secondo la configurazione fornita.
+
+---
+
+La cartella `Hanoi` contiene:
+
+- i tipi di dato `Disk`, `Index`, `Move`, `Tower`;
+- la classe `Game` che detiene lo stato ed espone l'API di interazione con il gioco;
+- il modulo `IO` che contiene le funzioni necessarie per interagire con il _gioco_ attraverso la _console_.
+
+---
+
+La cartella `Solver` contiene:
+
+- tre _moduli di estensioni_, contenenti operatori su rispettivamente _indici_, _mosse_ e _sequenze di mosse_;
+- due moduli `~Solver` che espongono funzioni che risolvono il gioco con diversi algoritmi;
+- un modulo `SolverIO` che contiene funzioni per stampare i risultati evitando problemi di concorrenza.
+
+---
+
+La cartella `Profiler` contiene un unico modulo omonimo che espone una funzione che misura il tempo di esecuzione di una data `Action`.
+
+### Note stilistiche
+
+> Un artista si appassiona al processo ancor più che al risultato. Per questo è importante condividere le scelte stilistiche.
+
+- Ove possibile ho evitato l'uso di parentesi graffe; in questo modo ho eliminato molte _righe inutili_ e ho espresso la differenza tra _singole istruzioni/espressioni_ e _scope_ veri e propri.
+- Generalmente ho usato uno stile più "funzionale" (input -> output) nel trattamento dei _dati_, e più "imperativo" (do this; do this;) nella gestione degli _effetti_.
+- Ho preferito le dipendenze statiche (direttive using) a quelle dinamiche (dependency injection); in questo modo ho evitato il proliferare di astrazioni (interfacce, classi astratte, ecc) e di logiche _boilerplate_. Normalmente si preferisce dipendere dalle astrazioni e non dalle concretezze, ma questo è molto costoso, quindi se non ho espressamente bisogno di beneficiare di questo principio di progettazione, lo ignoro.
+- Ho chiamato sempre i moduli (classi statiche) per nome, per evidenziare il cambio di competenza; fa eccezione il metodo `Startup.RunHanoi`, dove il nome del modulo non mi è parso particolarmente significativo, e dunque ho usato `using static` per ometterlo.
+- Ho cercato di non mettere mai nello stesso _scope_ istruzioni di livelli di astrazione diversi; ove possibile ho nascosto i dettagli di implementazione dietro a nomi più attinenti al dominio del progetto e fissando dietro a tale nome il maggior numero di parametri possibili.
 
 ## Come si usa?
 
-Da fare.
+Per poter lanciare il giochino bisogna avere .NET SDK 5+ installato.
+
+È possibile lanciare direttamente il progetto:
+
+```
+dotnet run <play | solve> <number of disks>
+```
+
+Oppure _installare_ globalmente il comando `hanoi`:
+
+```
+.\scripts\install.ps1
+```
+
+Una volta installato si _esegue_ con:
+
+```
+hanoi <play | solve> <number of disks>
+```
+
+È possibile _aggiornarlo_:
+
+```
+.\scripts\update.ps1
+```
+
+O _rimuoverlo_:
+
+```
+.\scripts\remove.ps1
+```
